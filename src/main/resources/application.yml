@@ -1,0 +1,34 @@
+spring:
+  profiles:
+    active: local
+
+logging:
+  level:
+    ROOT: info
+    org:
+      hibernate:
+        type: trace
+
+# Local env
+---
+spring:
+  profiles: local
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/oauth2?useSSL=false&serverTimezone=UTC
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    initialization-mode: always
+    platform: oauth2
+
+  security:
+    user:
+      name: user
+      password: "{noop}pass"
