@@ -11,6 +11,7 @@
 #http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=code&scope=read_profile
 
 
+# Authorization Code Grant Type 토큰 요청
 POST http://localhost:8080/oauth/token
 Content-Type: application/x-www-form-urlencoded
 Authorization: Basic Y2xpZW50OnBhc3N3b3Jk
@@ -18,3 +19,9 @@ Authorization: Basic Y2xpZW50OnBhc3N3b3Jk
 code=EzNA97&grant_type=authorization_code&redirect_uri=http%3A%2F%2Flocalhost%3A9000%2Fcallback&scope=read_profile
 ###
 
+
+GET http://localhost:8080/api/session
+Accept: application/json
+Authorization: Bearer 623d5bc4-7172-44ae-85c1-73a297e6ab04
+
+###
