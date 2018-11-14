@@ -13,7 +13,7 @@ Spring Boot 2.1 기반으로 Spring Security OAuth2를 살펴보는 프로젝트
         - [Code](#code)
         - [인증](#%EC%9D%B8%EC%A6%9D)
         - [API 호출](#api-%ED%98%B8%EC%B6%9C)
-    - [Implicit Grant 방식](#implicit-grant-%EB%B0%A9%EC%8B%9D)
+        - [Code](#code-1)
     - [Resource Owner Password Credentials Grant 방식](#resource-owner-password-credentials-grant-%EB%B0%A9%EC%8B%9D)
     - [Client Credentials Grant Type 방식](#client-credentials-grant-type-%EB%B0%A9%EC%8B%9D)
 - [참고](#%EC%B0%B8%EA%B3%A0)
@@ -164,8 +164,6 @@ curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할
 물론 token 정보를 넘기지않거나 유효하지 않으면 401 응답을 받습니다.
 
 
-## Implicit Grant 방식
-
 ![Implicit Grant](https://github.com/cheese10yun/TIL/raw/master/assets/Implicit%20Grant.png)
 
 * (1) 클라이언트가 파리미터러 클라이언트 ID, 리다이렉트 URI, 응답 타입을 code로 지정하여 권한 서버에 전달합니다. 정상적으로 인증이 되면 권한 코드 부여 코드를 클라이언트에게 보냅니다.
@@ -175,6 +173,49 @@ curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할
 * (3) 요청 받은 Access Token 정보에 대한 검증에 대한 응답값을 돌려줍니다.
 * (4) 유효한 Access Token 기반으로 Resource Server와 통신합니다.
 
+### Code
+
+```java
+@Override
+public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+    clients
+            .inMemory()
+            .withClient("client")
+            .secret("{bcrypt}$2a$10$iP9ejueOGXO29.Yio7rqeuW9.yOC4YaV8fJp3eIWbP45eZSHFEwMG")  // password
+            .redirectUris("http://localhost:9000/callback")
+            .authorizedGrantTypes("authorization_code", "implicit") // (1) implicit 추가
+            .accessTokenValiditySeconds(120)
+            .scopes("read_profile");
+}
+```
+코드는 변경은 거의 없습니다. `authorizedGrantTypes()` 메서드의 매개변수가 String 배열이기 때문에 `"implicit"`를 추가해주면 Implicit Grant 방식 설정이 완료됩니다.
+
+주요한 차이점은 암시적이라는 그랜트 타입의 이름처럼 액세스 토큰이 암시적으로 획득되기 때문에 /auth/token 으로 요청을 보낼 필요가 없습니다.
+
+[http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=token&scope=read_profile&state=test](http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=token&scope=read_profile&state=test) 으로 웹브라우저로 요청합니다.
+
+* 여기서 중요한점은 `response_type=token` 으로 요청합니다. `Authorization Code Grant Type` 에서는 `code`를 요청했지만 여기서는 `token` 정보를 응답받기 **위해서 `token` 정보를 요청합니다.**
+* `state=test`는 서버의 인가 엔드포인트로 **리다이렉트 될 때 전달할 수 있는 값입니다.** 아래에서 자세히 살펴보겠습니다. 
+
+![oauth2-login](/assets/oauth2-login.png)
+
+위 플로우 처럼 로그인을 시도합니다. (username: user, password: pass) 
+
+![oauth-code](/assets/oauth-prove.png)
+
+유저 정보 인증이 완료되면 scope에 대한 권한 승인이 페이지가 나옵니다. 소셜 가입에서 프로필 정보, 프로필 사진 등을 요구하는 것과 마찬가지입니다. (위에서 사용한 그림을 그대로 가져왔습니다.)
+
+
+![Implicit Grant-image](/assets/Implicit%20Grant-image.png)
+[http://localhost:9000/callback#access_token=13474f0a-eb0f-4423-9bf3-9a2e9dd3e124&token_type=bearer&state=test&expires_in=120](http://localhost:9000/callback#access_token=13474f0a-eb0f-4423-9bf3-9a2e9dd3e124&token_type=bearer&state=test&expires_in=120)
+
+리다이렉트된 URL 값입니다. 
+* access_token=13474f0a-eb0f-4423-9bf3-9a2e9dd3e124 - Implicit Grant 방식에서는 Token 정보를 바로 응답 합니다.
+* state=test - 서버 인가 엔드포인트로 리다이렉트 될때 전달 받을 수 있습니다. 넘겨야할 값이 있다면 state를 힐 수 있습니다.
+* expires_in=120 - 토근 만료시간초입니다. `accessTokenValiditySeconds(120)` 메서드로 넘긴 토큰 만료 시간을 전달받습니다.
+* **Implicit Grant는 리프레시 토큰을 발급하지 않습니다.**
+* Implicit Grant은 서드파티 애플리케이션에 의한 리다이렉트 URI 등록이 필요합니다. 등록되지 않은 클라이언트에 액세스 토큰이 전달되는 것을 막기 위한 장치입니다.
+
 ## Resource Owner Password Credentials Grant 방식
 
 ![Resource Owner Password Credentials Grant](https://github.com/cheese10yun/TIL/raw/master/assets/Resource%20Owner%20Password%20Credentials%20Grant.png)
@@ -183,6 +224,7 @@ curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할
 * (2) 넘겨 받은 정보기반으로 권한 서버에 Access Token 정보를 요청합니다.
 * (3) Access Token 정보를 응답 받습니다. 이때 Refresh Token 정보도 넘겨 줄 수도 있습니다.
 * (4) Access Token 기반으로 Resource Server와 통신합니다.
+
 
 ## Client Credentials Grant Type 방식
 

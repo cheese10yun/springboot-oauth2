@@ -9,6 +9,7 @@
 # password
 
 #http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=code&scope=read_profile
+#http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=token&scope=read_profile&state=test
 
 
 # Authorization Code Grant Type 토큰 요청
