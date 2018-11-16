@@ -13,8 +13,14 @@ Spring Boot 2.1 기반으로 Spring Security OAuth2를 살펴보는 프로젝트
         - [Code](#code)
         - [인증](#%EC%9D%B8%EC%A6%9D)
         - [API 호출](#api-%ED%98%B8%EC%B6%9C)
+    - [Implicit Grant Type 방식](#implicit-grant-type-%EB%B0%A9%EC%8B%9D)
         - [Code](#code-1)
+        - [인증](#%EC%9D%B8%EC%A6%9D-1)
+        - [API 호출](#api-%ED%98%B8%EC%B6%9C-1)
     - [Resource Owner Password Credentials Grant 방식](#resource-owner-password-credentials-grant-%EB%B0%A9%EC%8B%9D)
+        - [Code](#code-2)
+        - [인증](#%EC%9D%B8%EC%A6%9D-2)
+        - [API 호출](#api-%ED%98%B8%EC%B6%9C-2)
     - [Client Credentials Grant Type 방식](#client-credentials-grant-type-%EB%B0%A9%EC%8B%9D)
 - [참고](#%EC%B0%B8%EA%B3%A0)
 
@@ -164,6 +170,7 @@ curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할
 물론 token 정보를 넘기지않거나 유효하지 않으면 401 응답을 받습니다.
 
 
+## Implicit Grant Type 방식
 ![Implicit Grant](https://github.com/cheese10yun/TIL/raw/master/assets/Implicit%20Grant.png)
 
 * (1) 클라이언트가 파리미터러 클라이언트 ID, 리다이렉트 URI, 응답 타입을 code로 지정하여 권한 서버에 전달합니다. 정상적으로 인증이 되면 권한 코드 부여 코드를 클라이언트에게 보냅니다.
@@ -185,6 +192,7 @@ public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
             .redirectUris("http://localhost:9000/callback")
             .authorizedGrantTypes("authorization_code", "implicit") // (1) implicit 추가
             .accessTokenValiditySeconds(120)
+            .refreshTokenValiditySeconds(240)
             .scopes("read_profile");
 }
 ```
@@ -192,6 +200,8 @@ public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
 
 주요한 차이점은 암시적이라는 그랜트 타입의 이름처럼 액세스 토큰이 암시적으로 획득되기 때문에 /auth/token 으로 요청을 보낼 필요가 없습니다.
 
+
+### 인증
 [http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=token&scope=read_profile&state=test](http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=http://localhost:9000/callback&response_type=token&scope=read_profile&state=test) 으로 웹브라우저로 요청합니다.
 
 * 여기서 중요한점은 `response_type=token` 으로 요청합니다. `Authorization Code Grant Type` 에서는 `code`를 요청했지만 여기서는 `token` 정보를 응답받기 **위해서 `token` 정보를 요청합니다.**
@@ -216,6 +226,26 @@ public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
 * **Implicit Grant는 리프레시 토큰을 발급하지 않습니다.**
 * Implicit Grant은 서드파티 애플리케이션에 의한 리다이렉트 URI 등록이 필요합니다. 등록되지 않은 클라이언트에 액세스 토큰이 전달되는 것을 막기 위한 장치입니다.
 
+### API 호출
+```
+curl -X GET \
+  http://localhost:8080/api/session \
+  -H 'Authorization: Bearer 623d5bc4-7172-44ae-85c1-73a297e6ab04'
+```
+
+curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할 수 있습니다.
+```json
+{
+    "authorities": [],
+    "details": {
+        "remoteAddress": "0:0:0:0:0:0:0:1",
+        "sessionId": null,
+        "tokenValue": "623d5bc4-7172-44ae-85c1-73a297e6ab04"
+    }
+    ....
+}
+```
+
 ## Resource Owner Password Credentials Grant 방식
 
 ![Resource Owner Password Credentials Grant](https://github.com/cheese10yun/TIL/raw/master/assets/Resource%20Owner%20Password%20Credentials%20Grant.png)
@@ -224,6 +254,87 @@ public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
 * (2) 넘겨 받은 정보기반으로 권한 서버에 Access Token 정보를 요청합니다.
 * (3) Access Token 정보를 응답 받습니다. 이때 Refresh Token 정보도 넘겨 줄 수도 있습니다.
 * (4) Access Token 기반으로 Resource Server와 통신합니다.
+
+### Code
+
+```java
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    private final AuthenticationManager authenticationManager;
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients
+                .inMemory()
+                .withClient("client")
+                .secret("{bcrypt}$2a$10$iP9ejueOGXO29.Yio7rqeuW9.yOC4YaV8fJp3eIWbP45eZSHFEwMG")  // password
+                .redirectUris("http://localhost:9000/callback")
+                .authorizedGrantTypes("authorization_code", "implicit", "password") // (1) password 타입 추가
+                .accessTokenValiditySeconds(120) //  access token 만료시간
+                .refreshTokenValiditySeconds(240) // refresh token 만료시간
+                .scopes("read_profile");
+    }
+
+
+    //(2)
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
+        //@formatter:off
+        endpoints
+                .authenticationManager(authenticationManager) // Bean 등록은 SecurityConfig 에서 등록합니다.
+        ;
+        //@formatter:on
+    }
+}
+```
+* (1) password 타입을 추가합니다.
+* (2) authenticationManager 빈등록을 해주고 의존성 주입을 받아 `authenticationManager(authenticationManager)` 메서드를 통해 객체를 넘겨줍니다.
+
+
+### 인증
+
+```
+curl -X POST \
+  http://localhost:8080/oauth/token \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'username=user&password=pass&grant_type=password&scope=read_profile'
+```
+
+인증 요청은 위 플로우 설명 처럼 password 기반으로 token 정보를 요청합니다. 유저의 비밀번호 인증이 완료되면 아래와 같이 응답을 받습니다.
+
+```json
+{
+    "access_token": "bb438582-0d12-4a67-94f5-0bdbcd8b29ef",
+    "token_type": "bearer",
+    "expires_in": 103,
+    "scope": "read_profile"
+}
+```
+
+
+### API 호출
+```
+curl -X GET \
+  http://localhost:8080/api/session \
+  -H 'Authorization: Bearer 623d5bc4-7172-44ae-85c1-73a297e6ab04'
+```
+
+curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할 수 있습니다.
+```json
+{
+    "authorities": [],
+    "details": {
+        "remoteAddress": "0:0:0:0:0:0:0:1",
+        "sessionId": null,
+        "tokenValue": "623d5bc4-7172-44ae-85c1-73a297e6ab04"
+    }
+    ....
+}
+```
+
+
+
+
+
 
 
 ## Client Credentials Grant Type 방식
