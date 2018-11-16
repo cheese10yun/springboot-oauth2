@@ -28,7 +28,3 @@ spring:
     initialization-mode: always
     platform: oauth2
 
-  security:
-    user:
-      name: user
-      password: "{noop}pass"
