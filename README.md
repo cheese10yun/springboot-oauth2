@@ -22,6 +22,8 @@ Spring Boot 2.1 기반으로 Spring Security OAuth2를 살펴보는 프로젝트
         - [인증](#%EC%9D%B8%EC%A6%9D-2)
         - [API 호출](#api-%ED%98%B8%EC%B6%9C-2)
     - [Client Credentials Grant Type 방식](#client-credentials-grant-type-%EB%B0%A9%EC%8B%9D)
+        - [인증](#%EC%9D%B8%EC%A6%9D-3)
+        - [API 호출](#api-%ED%98%B8%EC%B6%9C-3)
 - [참고](#%EC%B0%B8%EA%B3%A0)
 
 <!-- /TOC -->
@@ -331,12 +333,6 @@ curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할
 }
 ```
 
-
-
-
-
-
-
 ## Client Credentials Grant Type 방식
 
 ![Client Credentials Grant Type](https://github.com/cheese10yun/TIL/raw/master/assets/Client%20Credentials%20Grant%20Type.png)
@@ -344,6 +340,66 @@ curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할
 * (1) Access Token 정보를 요청합니다.
 * (3) Access Token 정보를 응답합니다. 이때 Refresh Token 정보는 응답하지 않는 것을 권장합니다. 별다른 인증 절차가 없기 떄문에 Refresh Token 까지 넘기지 않는 것이라고 생각합니다.
 * (4) Access Token 기반으로 Resource Server와 통신합니다.
+
+
+```java
+@Override
+public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+    clients
+            .inMemory()
+            .withClient("client")
+            .secret("{bcrypt}$2a$10$iP9ejueOGXO29.Yio7rqeuW9.yOC4YaV8fJp3eIWbP45eZSHFEwMG")  // password
+            .redirectUris("http://localhost:9000/callback")
+            .authorizedGrantTypes("authorization_code", "implicit", "password", "client_credentials") // client_credentials 추가
+            .accessTokenValiditySeconds(120)
+            .refreshTokenValiditySeconds(240)
+            .scopes("read_profile");
+}
+```
+* 코드의 변경사항은 `client_credentials` 변경 뿐입니다.
+* 리소스 주인이 어떤 권한인증을 하지 않기 때문에 Refresh Token을 넘겨주지 않는것이 바람직합니다.
+* Client Credentials Grant Type은 리소스 소유자에게 권한 위임 받아 리소스에 접근하는 것이 아니라 자기 자신이 애플리케이션을 사용할 목적으로 사용하는 것이 일반적입니다.
+
+### 인증
+```
+curl -X POST \
+  http://localhost:8080/oauth/token \
+  -H 'Authorization: Basic Y2xpZW50OnBhc3N3b3Jk' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'grant_type=client_credentials&scope=read_profile&undefined='
+```
+
+curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할 수 있습니다.
+
+```json
+{
+    "access_token": "fd4123f6-1f4f-4eeb-8342-e4eefefaee40",
+    "token_type": "bearer",
+    "expires_in": 119,
+    "scope": "read_profile"
+}
+```
+
+### API 호출
+```
+curl -X GET \
+  http://localhost:8080/api/session \
+  -H 'Authorization: Bearer 623d5bc4-7172-44ae-85c1-73a297e6ab04'
+```
+
+curl을 이용해서 요청을 보내면 아래와 같이 응답값을 확인할 수 있습니다.
+```json
+{
+    "authorities": [],
+    "details": {
+        "remoteAddress": "0:0:0:0:0:0:0:1",
+        "sessionId": null,
+        "tokenValue": "623d5bc4-7172-44ae-85c1-73a297e6ab04"
+    }
+    ....
+}
+```
+
 
 
 # 참고

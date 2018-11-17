@@ -22,7 +22,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 .withClient("client")
                 .secret("{bcrypt}$2a$10$iP9ejueOGXO29.Yio7rqeuW9.yOC4YaV8fJp3eIWbP45eZSHFEwMG")  // password
                 .redirectUris("http://localhost:9000/callback")
-                .authorizedGrantTypes("authorization_code", "implicit", "password")
+                .authorizedGrantTypes("authorization_code", "implicit", "password", "client_credentials")
                 .accessTokenValiditySeconds(120)
                 .refreshTokenValiditySeconds(240)
                 .scopes("read_profile");
