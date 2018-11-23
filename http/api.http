@@ -36,10 +36,18 @@ Authorization: Basic Y2xpZW50OnBhc3N3b3Jk
 grant_type=client_credentials&scope=read_profile
 ###
 
+# Refresh Token Type
+POST http://localhost:8080/oauth/token
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic Y2xpZW50OnBhc3N3b3Jk
+
+grant_type=refresh_token&refresh_token=b7d6a15c-f063-4457-b417-0555cb54b57a&scope=read_profile
+###
+
 
 # session 조회
 GET http://localhost:8080/api/session
 Accept: application/json
-Authorization: Bearer 29834bce-859b-4279-b01e-76aa21465879
+Authorization: Bearer 9298f76f-c10c-4802-ba60-6c49d3e715f3
 
 ###
