@@ -15,6 +15,25 @@ spring:
   profiles: local
   jpa:
     database: mysql
+    properties.hibernate.dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/oauth2?useSSL=false&serverTimezone=UTC
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# Init
+---
+spring:
+  profiles: init
+  jpa:
+    database: mysql
+    properties.hibernate.dialect: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
       ddl-auto: create
     show-sql: true
@@ -27,4 +46,3 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     initialization-mode: always
     platform: oauth2
-
