@@ -1,4 +1,18 @@
 ## 목차
+- [목차](#%EB%AA%A9%EC%B0%A8)
+- [데이터베이스 스키마 구성하기](#%EB%8D%B0%EC%9D%B4%ED%84%B0%EB%B2%A0%EC%9D%B4%EC%8A%A4-%EC%8A%A4%ED%82%A4%EB%A7%88-%EA%B5%AC%EC%84%B1%ED%95%98%EA%B8%B0)
+    - [oauth_client_details table](#oauthclientdetails-table)
+- [프로젝트 구동](#%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EA%B5%AC%EB%8F%99)
+    - [OAuth2 테이블](#oauth2-%ED%85%8C%EC%9D%B4%EB%B8%94)
+- [Code](#code)
+    - [Resource Owner Password Credentials Grant](#resource-owner-password-credentials-grant)
+        - [요청](#%EC%9A%94%EC%B2%AD)
+        - [응답](#%EC%9D%91%EB%8B%B5)
+    - [Authorization Code Grant Type](#authorization-code-grant-type)
+        - [요청](#%EC%9A%94%EC%B2%AD-1)
+        - [응답](#%EC%9D%91%EB%8B%B5-1)
+    - [입력된 데이터](#%EC%9E%85%EB%A0%A5%EB%90%9C-%EB%8D%B0%EC%9D%B4%ED%84%B0)
+- [참고](#%EC%B0%B8%EA%B3%A0)
 
 ## 데이터베이스 스키마 구성하기
 
