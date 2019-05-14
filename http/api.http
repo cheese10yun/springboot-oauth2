@@ -41,7 +41,7 @@ POST http://localhost:8080/oauth/token
 Content-Type: application/x-www-form-urlencoded
 Authorization: Basic Y2xpZW50OnBhc3N3b3Jk
 
-grant_type=refresh_token&refresh_token=b7d6a15c-f063-4457-b417-0555cb54b57a&scope=read_profile
+grant_type=refresh_token&scope=read_profile&refresh_token=2ec7cfcc-110b-42a0-859f-fc72b6067935
 ###
 
 
